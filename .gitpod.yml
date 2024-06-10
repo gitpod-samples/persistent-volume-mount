@@ -1,0 +1,40 @@
+image:
+  file: .gitpod.Dockerfile
+
+
+tasks:
+    # If you want to do this globally for all your workspaces, you may build a private docker image with the following script
+    # and set that as your default org workspace image. Relevant docs:
+    # - https://www.gitpod.io/docs/configure/workspaces/workspace-image#use-a-private-docker-image
+    # - https://www.gitpod.io/docs/configure/orgs/policies#default-workspace-image
+  - name: Mount a s3 bucket
+    before: |
+      # Cleanup terminal
+      printf "\033[3J\033c\033[3J"
+
+      # You may change these variables as needed
+      rclone_section="anons3"
+      bucket_name="1000genomes"
+      bucket_path="/release"
+
+      # You may use a path outside of `/workspace` directory
+      mount_path="$PWD/anons3_1000genomes"
+      mkdir -p "${mount_path}"
+
+      # Mount
+      mount_flags=(
+        --config=$PWD/rclone.conf
+
+        mount
+          --daemon # Remove this to debug if any error occurs
+          --allow-other
+          --async-read
+          --vfs-cache-mode=full
+
+        ${rclone_section}:${bucket_name}"${bucket_path}"
+        ${mount_path}
+      )
+
+      sudo rclone "${mount_flags[@]}"
+
+      printf '# [info]: %s\n' "The public bucket called '${bucket_name}' was mounted on ${mount_path}"
